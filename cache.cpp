@@ -2,7 +2,7 @@
 #include <vector>
 #include <bitset>
 #include <iomanip>
-
+#include <cmath>
 using namespace std;
 
 #define DBG 1
@@ -14,7 +14,12 @@ enum cacheResType
 	MISS = 0,
 	HIT = 1
 };
-std::unique_ptr<void> cache;
+
+std::vector<std::bitset<16 * 8 + 1 + 16>> cache16(CACHE_SIZE / 16, 0);
+std::vector<std::bitset<32 * 8 + 1 + 16>> cache32(CACHE_SIZE / 32, 0);
+std::vector<std::bitset<64 * 8 + 1 + 16>> cache64(CACHE_SIZE / 64, 0);
+std::vector<std::bitset<128 * 8 + 1 + 16>> cache128(CACHE_SIZE / 128, 0);
+
 int line_size;
 int OffsetBits;
 int IndexBits;
@@ -70,35 +75,66 @@ cacheResType cacheSimDM(unsigned int addr)
 {
 	int Tag = addr >> (OffsetBits + IndexBits);
 	int Index = (addr >> OffsetBits) & ((1 << IndexBits) - 1);
-
 	switch (line_size)
 	{
 	case 16:
-		auto &VectorRef = *reinterpret_cast<std::vector<std::bitset<16 * 8 + 1 + 16> *> *>(cache.get());
-		if (VectorRef[Index][0] == 1 && ((VectorRef[Index]->operator>>(1))) == Tag)
+		if (cache16[Index][16 * 8 + 16] == 1 && ((cache16[Index] >> (16 * 8)).operator&=(0xFFFF)) == Tag)
 		{
 			return HIT;
+		}
+		else
+		{
+			cache16[Index][16 * 8 + 16] = 1;
+			for (int i = 0; i < 16; i++)
+			{
+				cache16[Index][16 * 8 + i] = ((Tag >> i) & 0x1);
+			}
+			return MISS;
 		}
 		break;
 	case 32:
-		auto &VectorRef = *reinterpret_cast<std::vector<std::bitset<32 * 8 + 1 + 16> *> *>(cache.get());
-		if (VectorRef[Index][0] == 1 && (VectorRef[Index]->operator>>(1)) == Tag)
+		if (cache16[Index][32 * 8 + 16] == 1 && ((cache16[Index] >> (32 * 8)).operator&=(0xFFFF)) == Tag)
 		{
 			return HIT;
+		}
+		else
+		{
+			cache32[Index][32 * 8 + 16] = 1;
+			for (int i = 0; i < 32; i++)
+			{
+				cache32[Index][32 * 8 + i] = ((Tag >> i) & 0x1);
+			}
+			return MISS;
 		}
 		break;
 	case 64:
-		auto &VectorRef = *reinterpret_cast<std::vector<std::bitset<64 * 8 + 1 + 16> *> *>(cache.get());
-		if (VectorRef[Index][0] == 1 && (VectorRef[Index]->operator>>(1)) == Tag)
+		if (cache64[Index][64 * 8 + 16] == 1 && ((cache64[Index] >> (64 * 8)).operator&=(0xFFFF)) == Tag)
 		{
 			return HIT;
 		}
+		else
+		{
+			cache64[Index][64 * 8 + 16] = 1;
+			for (int i = 0; i < 64; i++)
+			{
+				cache64[Index][64 * 8 + i] = ((Tag >> i) & 0x1);
+			}
+			return MISS;
+		}
 		break;
 	case 128:
-		auto &VectorRef = *reinterpret_cast<std::vector<std::bitset<128 * 8 + 1 + 16> *> *>(cache.get());
-		if (VectorRef[Index][0] == 1 && (VectorRef[Index]->operator>>(1)) == Tag)
+		if (cache128[Index][128 * 8 + 16] == 1 && ((cache128[Index] >> (128 * 8)).operator&=(0xFFFF)) == Tag)
 		{
 			return HIT;
+		}
+		else
+		{
+			cache128[Index][128 * 8 + 16] = 1;
+			for (int i = 0; i < 128; i++)
+			{
+				cache128[Index][128 * 8 + i] = ((Tag >> i) & 0x1);
+			}
+			return MISS;
 		}
 		break;
 	}
@@ -106,7 +142,6 @@ cacheResType cacheSimDM(unsigned int addr)
 	// returns whether it caused a cache miss or a cache hit
 
 	// The current implementation assumes there is no cache; so, every transaction is a miss
-
 	return MISS;
 }
 
@@ -121,31 +156,19 @@ cacheResType cacheSimFA(unsigned int addr)
 }
 char *msg[2] = {"Miss", "Hit"};
 
-#define NO_OF_Iterations 100 // CHange to 1,000,000
+#define NO_OF_Iterations 500000 // Change to 1,000,000
 int main()
 {
-	cout << "Choose the line size of the cache: ";
+main:
+	cout << "Choose the line size of the cache (16,32,64,128): ";
 	cin >> line_size;
+	if (line_size != 16 && line_size != 32 && line_size != 64 && line_size != 128)
+	{
+		goto main;
+	}
 	OffsetBits = log2(line_size);
 	IndexBits = log2(CACHE_SIZE / line_size);
-	switch (line_size)
-	{
-	case 16:
-		cache.reset(new std::vector<std::bitset<16 * 8 + 1 + 16>>(CACHE_SIZE / 16, std::bitset<16 * 8 + 1 + 16>(0)));
-		break;
-	case 32:
-		cache.reset(new std::vector<std::bitset<32 * 8 + 1 + 16>>(CACHE_SIZE / 32, std::bitset<32 * 8 + 1 + 16>(0)));
-		break;
-	case 64:
-		cache.reset(new std::vector<std::bitset<64 * 8 + 1 + 16>>(CACHE_SIZE / 64, std::bitset<64 * 8 + 1 + 16>(0)));
-		break;
-	case 128:
-		cache.reset(new std::vector<std::bitset<128 * 8 + 1 + 16>>(CACHE_SIZE / 128, std::bitset<128 * 8 + 1 + 16>(0)));
-		break;
-	default:
-		cout << "Invalid line size. Exiting program." << endl;
-		exit(1);
-	}
+
 	unsigned int hit = 0;
 	cacheResType r;
 
@@ -158,7 +181,7 @@ int main()
 		r = cacheSimDM(addr);
 		if (r == HIT)
 			hit++;
-		cout << "0x" << setfill('0') << setw(8) << hex << addr << " (" << msg[r] << ")\n";
+		cout << "0x" << setfill('0') << setw(8) << hex << addr << " (" << msg[r] << ")  " << dec << inst + 1 << "\n";
 	}
 	cout << "Hit ratio = " << (100 * hit / NO_OF_Iterations) << endl;
 }
