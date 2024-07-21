@@ -15,7 +15,10 @@ The simulation includes a variety of memory access patterns to evaluate cache pe
   - Memory address generators for testing.
   - Cache simulation functions for both direct-mapped and fully associative caches.
   - Main function to drive the simulation and print results.
-
+- `P2-Report.pdf`: Provides a detailed explanation of the project, including:
+  - Breakdown of our test cases used in the cache simulations.
+  - Results and analyses of the experiments.
+  - Conclusions drawn from the simulation data.
 ## Building
 
 To build the program, use a C++ compiler. For example, using `g++`:
