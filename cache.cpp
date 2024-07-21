@@ -74,6 +74,42 @@ unsigned int memGen6()
     return (addr += 32) % (64 * 4 * 1024);
 }
 
+unsigned int memGenT1()
+{
+    static unsigned int addr = 0;
+    return addr;
+}
+
+unsigned int memGenExp() // change number of iterations to 25 to avoid overflow
+{
+    static unsigned int addr = 1;
+    addr *= 2;
+    return addr % DRAM_SIZE;
+}
+
+unsigned int memGenAlt()
+{
+    static unsigned int addr = 0;
+    addr = (addr % 2 == 0) ? addr + 1024 : addr - 512;
+    return (addr + DRAM_SIZE) % DRAM_SIZE; // Ensure address is positive and within range
+}
+unsigned int memGenCyclic()
+{
+    static unsigned int addr = 0;
+    addr = (addr + 15) % (DRAM_SIZE / 32); // Cycle within a small portion of the DRAM
+    return addr;
+}
+unsigned int memGenInterleaved()
+{
+    static unsigned int addrA = 0;
+    static unsigned int addrB = 1024 * 1024;
+    static bool toggle = false;
+    toggle = !toggle;
+    return toggle ? (addrA += 1024) : (addrB += 1024);
+    // increase immediate increases hr for fa
+    // dm always 0 for conflict misses
+}
+
 // Direct Mapped Cache Simulator
 cacheResType cacheSimDM(unsigned int addr)
 {
@@ -97,14 +133,14 @@ cacheResType cacheSimDM(unsigned int addr)
         }
         break;
     case 32:
-        if (cache16[Index][32 * 8 + 16] == 1 && ((cache16[Index] >> (32 * 8)).operator&=(0xFFFF)) == Tag)
+        if (cache32[Index][32 * 8 + 16] == 1 && ((cache32[Index] >> (32 * 8)).operator&=(0xFFFF)) == Tag)
         {
             return HIT;
         }
         else
         {
             cache32[Index][32 * 8 + 16] = 1;
-            for (int i = 0; i < 32; i++)
+            for (int i = 0; i < 16; i++)
             {
                 cache32[Index][32 * 8 + i] = ((Tag >> i) & 0x1);
             }
@@ -119,7 +155,7 @@ cacheResType cacheSimDM(unsigned int addr)
         else
         {
             cache64[Index][64 * 8 + 16] = 1;
-            for (int i = 0; i < 64; i++)
+            for (int i = 0; i < 16; i++)
             {
                 cache64[Index][64 * 8 + i] = ((Tag >> i) & 0x1);
             }
@@ -134,7 +170,7 @@ cacheResType cacheSimDM(unsigned int addr)
         else
         {
             cache128[Index][128 * 8 + 16] = 1;
-            for (int i = 0; i < 128; i++)
+            for (int i = 0; i < 16; i++)
             {
                 cache128[Index][128 * 8 + i] = ((Tag >> i) & 0x1);
             }
@@ -177,7 +213,6 @@ cacheResType cacheSimFA(unsigned int addr, vector<cacheFA_> &cacheFA)
     return MISS;
 }
 char *msg[2] = {"Miss", "Hit"};
-
 #define NO_OF_Iterations 1000000 // Change to 1,000,000
 int main()
 {
@@ -206,16 +241,15 @@ main:
     unsigned int addr;
     int numberOflines = CACHE_SIZE / line_size;
     vector<cacheFA_> cacheFA(numberOflines);
-
     for (int i = 0; i < numberOflines; ++i)
     {
         cacheFA[i].V = 0;
     }
-    cout << ((choice == 1) ? "Fully Associative" : "Direct Mapping") << "Cache Simulator\n";
+    cout << ((choice == 1) ? "Fully Associative " : "Direct Mapping ") << "Cache Simulator\n";
 
     for (int inst = 0; inst < NO_OF_Iterations; inst++)
     {
-        addr = memGen3();
+        addr = memGen6();
         r = choice == 1 ? cacheSimFA(addr, cacheFA) : cacheSimDM(addr);
         if (r == HIT)
             hit++;
