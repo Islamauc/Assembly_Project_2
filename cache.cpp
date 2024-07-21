@@ -8,13 +8,17 @@ using namespace std;
 #define DBG 1
 #define DRAM_SIZE (64 * 1024 * 1024)
 #define CACHE_SIZE (64 * 1024)
-
+int FAcounter = 0;
 enum cacheResType
 {
     MISS = 0,
     HIT = 1
 };
-
+struct cacheFA_
+{
+    unsigned int Tag;
+    bool V;
+};
 std::vector<std::bitset<16 * 8 + 1 + 16>> cache16(CACHE_SIZE / 16, 0);
 std::vector<std::bitset<32 * 8 + 1 + 16>> cache32(CACHE_SIZE / 32, 0);
 std::vector<std::bitset<64 * 8 + 1 + 16>> cache64(CACHE_SIZE / 64, 0);
@@ -138,25 +142,43 @@ cacheResType cacheSimDM(unsigned int addr)
         }
         break;
     }
-    // This function accepts the memory address for the memory transaction and
-    // returns whether it caused a cache miss or a cache hit
-
-    // The current implementation assumes there is no cache; so, every transaction is a miss
     return MISS;
 }
-
+vector<cacheFA_> cacheFA;
 // Fully Associative Cache Simulator
-cacheResType cacheSimFA(unsigned int addr)
+cacheResType cacheSimFA(unsigned int addr, vector<cacheFA_> &cacheFA)
 {
-    // This function accepts the memory address for the read and
-    // returns whether it caused a cache miss or a cache hit
+    int numberOflines = CACHE_SIZE / line_size;
+    int nbyteselect = log2(line_size);
+    unsigned int TagBits = (addr >> nbyteselect);
 
-    // The current implementation assumes there is no cache; so, every transaction is a miss
+    for (int i = 0; i < numberOflines; i++)
+    {
+        if (cacheFA[i].V == 1 && cacheFA[i].Tag == TagBits)
+        {
+            return HIT;
+        }
+    }
+    if (FAcounter != numberOflines)
+    {
+        // cout << "HELLO";
+        if (cacheFA[FAcounter].V == 0)
+        {
+            cacheFA[FAcounter].Tag = TagBits;
+            cacheFA[FAcounter].V = 1;
+            FAcounter++;
+            return MISS;
+        }
+    }
+    // cout << "YAY";
+    int randomIndex = rand_() % numberOflines;
+    cacheFA[randomIndex].Tag = TagBits;
+    cacheFA[randomIndex].V = 1;
     return MISS;
 }
 char *msg[2] = {"Miss", "Hit"};
 
-#define NO_OF_Iterations 500000 // Change to 1,000,000
+#define NO_OF_Iterations 1000000 // Change to 1,000,000
 int main()
 {
 main:
@@ -173,12 +195,19 @@ main:
     cacheResType r;
 
     unsigned int addr;
+    int numberOflines = CACHE_SIZE / line_size;
+    vector<cacheFA_> cacheFA(numberOflines);
+
+    for (int i = 0; i < numberOflines; ++i)
+    {
+        cacheFA[i].V = 0;
+    }
     cout << "Direct Mapped Cache Simulator\n";
 
     for (int inst = 0; inst < NO_OF_Iterations; inst++)
     {
         addr = memGen3();
-        r = cacheSimDM(addr);
+        r = cacheSimFA(addr, cacheFA);
         if (r == HIT)
             hit++;
         cout << "0x" << setfill('0') << setw(8) << hex << addr << " (" << msg[r] << ")  " << dec << inst + 1 << "\n";
