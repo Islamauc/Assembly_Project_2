@@ -181,6 +181,15 @@ char *msg[2] = {"Miss", "Hit"};
 #define NO_OF_Iterations 1000000 // Change to 1,000,000
 int main()
 {
+    cout << "Choose either FA(1) or DM(2): ";
+start:
+    int choice;
+    cin >> choice;
+    if (choice != 1 && choice != 2)
+    {
+        goto start;
+    }
+
 main:
     cout << "Choose the line size of the cache (16,32,64,128): ";
     cin >> line_size;
@@ -202,12 +211,12 @@ main:
     {
         cacheFA[i].V = 0;
     }
-    cout << "Direct Mapped Cache Simulator\n";
+    cout << ((choice == 1) ? "Fully Associative" : "Direct Mapping") << "Cache Simulator\n";
 
     for (int inst = 0; inst < NO_OF_Iterations; inst++)
     {
         addr = memGen3();
-        r = cacheSimFA(addr, cacheFA);
+        r = choice == 1 ? cacheSimFA(addr, cacheFA) : cacheSimDM(addr);
         if (r == HIT)
             hit++;
         cout << "0x" << setfill('0') << setw(8) << hex << addr << " (" << msg[r] << ")  " << dec << inst + 1 << "\n";
