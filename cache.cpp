@@ -8,7 +8,7 @@ using namespace std;
 #define DBG 1
 #define DRAM_SIZE (64 * 1024 * 1024)
 #define CACHE_SIZE (64 * 1024)
-int FAcounter = 0;
+int FAcounter = 0; // counter to keep track of next index in FA
 enum cacheResType
 {
     MISS = 0,
@@ -17,7 +17,7 @@ enum cacheResType
 struct cacheFA_
 {
     unsigned int Tag;
-    bool V;
+    bool V; // valid bit used for cold start misses
 };
 std::vector<std::bitset<16 * 8 + 1 + 16>> cache16(CACHE_SIZE / 16, 0);
 std::vector<std::bitset<32 * 8 + 1 + 16>> cache32(CACHE_SIZE / 32, 0);
@@ -73,7 +73,7 @@ unsigned int memGen6()
     static unsigned int addr = 0;
     return (addr += 32) % (64 * 4 * 1024);
 }
-
+// Test cases described in the project report
 unsigned int memGenT1()
 {
     static unsigned int addr = 0;
@@ -190,25 +190,24 @@ cacheResType cacheSimFA(unsigned int addr, vector<cacheFA_> &cacheFA)
 
     for (int i = 0; i < numberOflines; i++)
     {
-        if (cacheFA[i].V == 1 && cacheFA[i].Tag == TagBits)
+        if (cacheFA[i].V == 1 && cacheFA[i].Tag == TagBits) // hit if the block is valid and matches the tag
         {
             return HIT;
         }
     }
-    if (FAcounter != numberOflines)
+    if (FAcounter != numberOflines) // if the fa is not completely filled
     {
-        // cout << "HELLO";
-        if (cacheFA[FAcounter].V == 0)
+        if (cacheFA[FAcounter].V == 0) // if the next bit is cold (no data inside it)
         {
             cacheFA[FAcounter].Tag = TagBits;
             cacheFA[FAcounter].V = 1;
-            FAcounter++;
+            FAcounter++; // increment next line to write to counter
             return MISS;
         }
     }
-    // cout << "YAY";
-    int randomIndex = rand_() % numberOflines;
-    cacheFA[randomIndex].Tag = TagBits;
+    // if all lines are used, we use random replacement policy
+    int randomIndex = rand_() % numberOflines; // pick a random index
+    cacheFA[randomIndex].Tag = TagBits;        // replace index
     cacheFA[randomIndex].V = 1;
     return MISS;
 }
@@ -222,7 +221,7 @@ start:
     cin >> choice;
     if (choice != 1 && choice != 2)
     {
-        goto start;
+        goto start; // to validate user input
     }
 
 main:
@@ -230,7 +229,7 @@ main:
     cin >> line_size;
     if (line_size != 16 && line_size != 32 && line_size != 64 && line_size != 128)
     {
-        goto main;
+        goto main; // to validate user input
     }
     OffsetBits = log2(line_size);
     IndexBits = log2(CACHE_SIZE / line_size);
@@ -249,7 +248,7 @@ main:
 
     for (int inst = 0; inst < NO_OF_Iterations; inst++)
     {
-        addr = memGen6();
+        addr = memGen1();
         r = choice == 1 ? cacheSimFA(addr, cacheFA) : cacheSimDM(addr);
         if (r == HIT)
             hit++;
