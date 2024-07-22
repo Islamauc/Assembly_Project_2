@@ -19,6 +19,7 @@ struct cacheFA_
     unsigned int Tag;
     bool V; // valid bit used for cold start misses
 };
+// Declared 4 vectors that represent the 4 caches of line_sizes: 16,32,64,128 
 std::vector<std::bitset<16 * 8 + 1 + 16>> cache16(CACHE_SIZE / 16, 0);
 std::vector<std::bitset<32 * 8 + 1 + 16>> cache32(CACHE_SIZE / 32, 0);
 std::vector<std::bitset<64 * 8 + 1 + 16>> cache64(CACHE_SIZE / 64, 0);
@@ -113,66 +114,66 @@ unsigned int memGenInterleaved()
 // Direct Mapped Cache Simulator
 cacheResType cacheSimDM(unsigned int addr)
 {
-    int Tag = addr >> (OffsetBits + IndexBits);
-    int Index = (addr >> OffsetBits) & ((1 << IndexBits) - 1);
-    switch (line_size)
+    int Tag = addr >> (OffsetBits + IndexBits); // Extracting the Tag
+    int Index = (addr >> OffsetBits) & ((1 << IndexBits) - 1); // Extracting the Tag
+    switch (line_size) // Switch cases for choosing the size of the line
     {
     case 16:
-        if (cache16[Index][16 * 8 + 16] == 1 && ((cache16[Index] >> (16 * 8)).operator&=(0xFFFF)) == Tag)
-        {
+        if (cache16[Index][16 * 8 + 16] == 1 && ((cache16[Index] >> (16 * 8)).operator&=(0xFFFF)) == Tag) // check if the valid bit is one and compare the Tag
+        {                                                                                                 
             return HIT;
         }
         else
         {
-            cache16[Index][16 * 8 + 16] = 1;
+            cache16[Index][16 * 8 + 16] = 1; // Set the valid bit to 1
             for (int i = 0; i < 16; i++)
             {
-                cache16[Index][16 * 8 + i] = ((Tag >> i) & 0x1);
+                cache16[Index][16 * 8 + i] = ((Tag >> i) & 0x1); // Setting the Tag
             }
             return MISS;
         }
         break;
     case 32:
-        if (cache32[Index][32 * 8 + 16] == 1 && ((cache32[Index] >> (32 * 8)).operator&=(0xFFFF)) == Tag)
+        if (cache32[Index][32 * 8 + 16] == 1 && ((cache32[Index] >> (32 * 8)).operator&=(0xFFFF)) == Tag) // check if the valid bit is one and compare the Tag
         {
             return HIT;
         }
         else
         {
-            cache32[Index][32 * 8 + 16] = 1;
+            cache32[Index][32 * 8 + 16] = 1; // Set the valid bit to 1
             for (int i = 0; i < 16; i++)
             {
-                cache32[Index][32 * 8 + i] = ((Tag >> i) & 0x1);
+                cache32[Index][32 * 8 + i] = ((Tag >> i) & 0x1); // Setting the Tag
             }
             return MISS;
         }
         break;
     case 64:
-        if (cache64[Index][64 * 8 + 16] == 1 && ((cache64[Index] >> (64 * 8)).operator&=(0xFFFF)) == Tag)
+        if (cache64[Index][64 * 8 + 16] == 1 && ((cache64[Index] >> (64 * 8)).operator&=(0xFFFF)) == Tag) // check if the valid bit is one and compare the Tag
         {
             return HIT;
         }
         else
         {
-            cache64[Index][64 * 8 + 16] = 1;
+            cache64[Index][64 * 8 + 16] = 1; // Set the valid bit to 1
             for (int i = 0; i < 16; i++)
             {
-                cache64[Index][64 * 8 + i] = ((Tag >> i) & 0x1);
+                cache64[Index][64 * 8 + i] = ((Tag >> i) & 0x1); // Setting the Tag
             }
             return MISS;
         }
         break;
     case 128:
-        if (cache128[Index][128 * 8 + 16] == 1 && ((cache128[Index] >> (128 * 8)).operator&=(0xFFFF)) == Tag)
+        if (cache128[Index][128 * 8 + 16] == 1 && ((cache128[Index] >> (128 * 8)).operator&=(0xFFFF)) == Tag) // check if the valid bit is one and compare the Tag
         {
             return HIT;
         }
         else
         {
-            cache128[Index][128 * 8 + 16] = 1;
+            cache128[Index][128 * 8 + 16] = 1; // Set the valid bit to 1
             for (int i = 0; i < 16; i++)
             {
-                cache128[Index][128 * 8 + i] = ((Tag >> i) & 0x1);
+                cache128[Index][128 * 8 + i] = ((Tag >> i) & 0x1); // Setting the Tag
             }
             return MISS;
         }
